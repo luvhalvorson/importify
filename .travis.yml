@@ -1,6 +1,6 @@
 sudo: false
 
-language: c
+language: haskell
 
 cache:
   directories:
@@ -13,6 +13,7 @@ addons:
     - libgmp-dev
 
 before_install:
+  # Update needed Trusty package
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
