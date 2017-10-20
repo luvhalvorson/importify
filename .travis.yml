@@ -34,7 +34,7 @@ install:
   - travis_wait 30 stack build --test --bench --no-run-tests --no-run-benchmarks --no-terminal
 
 script:
-  - travis_wait 30 stack test --no-terminal
+  - travis_wait 30 stack test --no-terminal && find / -name HsBaseConfig.h 2> /dev/null
 
 notifications:
   email: false
