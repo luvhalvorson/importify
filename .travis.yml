@@ -2,6 +2,16 @@ sudo: false
 
 language: haskell
 
+# Yes, this is setting systemwide version. Other way Travis updates 7.x to 7.10.x. And direct usage of 8.0 is undocumented feature. GHC 8.0.2 allready instaled in the /opt/ by the Travis team, but that is not documented anywhere.
+matrix:
+  fast_finish: true
+  allow_failures:
+    - ghc: 8.0
+
+# Speeding-up GIT pulls. If set to 1 - Travis builds would go only consequentially
+git:
+  depth: 3
+
 cache:
   directories:
   - "$HOME/.stack"
@@ -9,13 +19,14 @@ cache:
 
 addons:
   apt:
+    sources:
+      - sourceline: 'ppa:hvr/ghc' # Canonical Trusty repo is ancient. This is relevant Haskell repo, just in case.
     packages:
-    - libgmp-dev
+      - libgmp-dev
+      - ghc-8.0.2
+      - cabal-install-2.0
 
 before_install:
-  # Update needed Trusty package
-  ## Update info explicitly
-  - sudo apt-get -qq update
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
@@ -23,23 +34,33 @@ before_install:
   - stack --version
 
 install:
-  # Install GHC for current project
+  ### To allow some step to fail, like for purpose to build-up cache - add ` || true` to the end of that line
+
+  # Prepare Haskell environment for current project
   - travis_wait 30 stack setup --no-terminal
-  - stack ghc -- --version
+
+  # Just in case, check that external GHC disabled
+  - stack config set system-ghc --global false || true
 
   # Build project dependencies
-  - travis_wait 30 stack build --only-dependencies --no-terminal
+  - travis_wait 40 stack build --only-dependencies --no-terminal || true
 
   # Build project itself
-  - travis_wait 30 stack build --test --bench --no-run-tests --no-run-benchmarks --no-terminal
+  ## Compile with tests and benchmarks, but does not run executable.
+  - travis_wait 40 stack build --test --bench --no-run-tests --no-run-benchmarks --no-terminal
 
+  # You can test `allow_failures` with it
+  #- false
 script:
-  - travis_wait 30 stack test --no-terminal && find / -name HsBaseConfig.h 2> /dev/null
+  # Run tests
+  - travis_wait 40 stack test --no-terminal
 
+  # You can force Travis to skip his default tries to help you in main `script` with it:
+  #- true
 notifications:
   email: false
   slack:
     rooms:
       - serokell:JWBvWb5PKOhknocQgcoQnflZ
-    on_success: change
+    on_success: always
     on_failure: always
