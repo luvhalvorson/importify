@@ -25,6 +25,7 @@ addons:
       - cabal-install-2.0
 
 before_install:
+  - sudo apt-get -qq update
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
